@@ -49,7 +49,7 @@
 	. = ..()
 	to_chat(C, "[info_text]")
 
-	C.fully_replace_character_name("[pick(GLOB.nightmare_names)]")
+	C.fully_replace_character_name(null, pick(GLOB.nightmare_names))
 
 /datum/species/shadow/nightmare/bullet_act(obj/projectile/P, mob/living/carbon/human/H)
 	var/turf/T = H.loc
@@ -154,13 +154,18 @@
 		playsound(owner, 'sound/hallucinations/far_noise.ogg', 50, TRUE)
 		respawn_progress = 0
 
+/obj/item/organ/heart/nightmare/get_availability(datum/species/S)
+	if(istype(S,/datum/species/shadow/nightmare))
+		return TRUE
+	return ..()
+
 //Weapon
 
 /obj/item/light_eater
 	name = "light eater" //as opposed to heavy eater
 	icon = 'icons/obj/changeling_items.dmi'
 	icon_state = "arm_blade"
-	item_state = "arm_blade"
+	inhand_icon_state = "arm_blade"
 	force = 25
 	armour_penetration = 35
 	lefthand_file = 'icons/mob/inhands/antag/changeling_lefthand.dmi'

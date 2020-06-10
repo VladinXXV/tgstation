@@ -84,7 +84,7 @@
 	SEND_SIGNAL(src, COMSIG_OBJ_SETANCHORED, anchorvalue)
 	anchored = anchorvalue
 
-/obj/throw_at(atom/target, range, speed, mob/thrower, spin=1, diagonals_first = 0, datum/callback/callback, force, gentle = FALSE)
+/obj/throw_at(atom/target, range, speed, mob/thrower, spin=1, diagonals_first = 0, datum/callback/callback, force, gentle = FALSE, quickstart = TRUE)
 	..()
 	if(obj_flags & FROZEN)
 		visible_message("<span class='danger'>[src] shatters into a million pieces!</span>")
@@ -197,9 +197,6 @@
 	var/mob/M = src.loc
 	if(istype(M) && M.client && M.machine == src)
 		src.attack_self(M)
-
-/obj/proc/hide(h)
-	return
 
 /obj/singularity_pull(S, current_size)
 	..()
@@ -329,3 +326,15 @@
 // Should move all contained objects to it's location.
 /obj/proc/dump_contents()
 	CRASH("Unimplemented.")
+
+/obj/handle_ricochet(obj/projectile/P)
+	. = ..()
+	if(. && ricochet_damage_mod)
+		take_damage(P.damage * ricochet_damage_mod, P.damage_type, P.flag, 0, turn(P.dir, 180), P.armour_penetration) // pass along ricochet_damage_mod damage to the structure for the ricochet
+
+/obj/update_overlays()
+	. = ..()
+	if(acid_level)
+		. += GLOB.acid_overlay
+	if(resistance_flags & ON_FIRE)
+		. += GLOB.fire_overlay

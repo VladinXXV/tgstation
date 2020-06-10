@@ -102,7 +102,7 @@
 			H.set_species(/datum/species/human)
 			H.apply_pref_name("human", preference_source)
 	if(!visualsOnly)
-		var/datum/bank_account/bank_account = new(H.real_name, src)
+		var/datum/bank_account/bank_account = new(H.real_name, src, H.dna.species.payday_modifier)
 		bank_account.payday(STARTING_PAYCHECKS, TRUE)
 		H.account_id = bank_account.account_id
 
@@ -224,6 +224,8 @@
 		shuffle_inplace(C.access) // Shuffle access list to make NTNet passkeys less predictable
 		C.registered_name = H.real_name
 		C.assignment = J.title
+		if(H.age)
+			C.registered_age = H.age
 		C.update_label()
 		for(var/A in SSeconomy.bank_accounts)
 			var/datum/bank_account/B = A
@@ -238,6 +240,9 @@
 		PDA.owner = H.real_name
 		PDA.ownjob = J.title
 		PDA.update_label()
+
+	if(H.client?.prefs.playtime_reward_cloak)
+		neck = /obj/item/clothing/neck/cloak/skill_reward/playing
 
 /datum/outfit/job/get_chameleon_disguise_info()
 	var/list/types = ..()

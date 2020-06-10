@@ -651,7 +651,7 @@
 		else
 			. += "It looks very robust."
 
-	if(issilicon(user) && (!machine_stat & BROKEN))
+	if(issilicon(user) && !(machine_stat & BROKEN))
 		. += "<span class='notice'>Shift-click [src] to [ density ? "open" : "close"] it.</span>"
 		. += "<span class='notice'>Ctrl-click [src] to [ locked ? "raise" : "drop"] its bolts.</span>"
 		. += "<span class='notice'>Alt-click [src] to [ secondsElectrified ? "un-electrify" : "permanently electrify"] it.</span>"
@@ -953,25 +953,25 @@
 		if(user.a_intent != INTENT_HELP)
 			if(!W.tool_start_check(user, amount=0))
 				return
-			user.visible_message("<span class='notice'>[user] is [welded ? "unwelding":"welding"] the airlock.</span>", \
+			user.visible_message("<span class='notice'>[user] begins [welded ? "unwelding":"welding"] the airlock.</span>", \
 							"<span class='notice'>You begin [welded ? "unwelding":"welding"] the airlock...</span>", \
 							"<span class='hear'>You hear welding.</span>")
 			if(W.use_tool(src, user, 40, volume=50, extra_checks = CALLBACK(src, .proc/weld_checks, W, user)))
 				welded = !welded
-				user.visible_message("<span class='notice'>[user.name] has [welded? "welded shut":"unwelded"] [src].</span>", \
+				user.visible_message("<span class='notice'>[user] [welded? "welds shut":"unwelds"] [src].</span>", \
 									"<span class='notice'>You [welded ? "weld the airlock shut":"unweld the airlock"].</span>")
 				update_icon()
 		else
 			if(obj_integrity < max_integrity)
 				if(!W.tool_start_check(user, amount=0))
 					return
-				user.visible_message("<span class='notice'>[user] is welding the airlock.</span>", \
+				user.visible_message("<span class='notice'>[user] begins welding the airlock.</span>", \
 								"<span class='notice'>You begin repairing the airlock...</span>", \
 								"<span class='hear'>You hear welding.</span>")
 				if(W.use_tool(src, user, 40, volume=50, extra_checks = CALLBACK(src, .proc/weld_checks, W, user)))
 					obj_integrity = max_integrity
 					machine_stat &= ~BROKEN
-					user.visible_message("<span class='notice'>[user.name] has repaired [src].</span>", \
+					user.visible_message("<span class='notice'>[user] finishes welding [src].</span>", \
 										"<span class='notice'>You finish repairing the airlock.</span>")
 					update_icon()
 			else
@@ -1090,7 +1090,7 @@
 
 	var/obj/structure/window/killthis = (locate(/obj/structure/window) in get_turf(src))
 	if(killthis)
-		killthis.ex_act(EXPLODE_HEAVY)//Smashin windows
+		SSexplosions.medobj += killthis
 
 	operating = TRUE
 	update_icon(AIRLOCK_CLOSING, 1)
@@ -1137,7 +1137,7 @@
 		return
 
 	var/airlock_type = painter.available_paint_jobs["[current_paintjob]"] // get the airlock type path associated with the airlock name the user just chose
-	var/obj/machinery/door/airlock/airlock = new airlock_type // we need to create an new instance of the airlock and assembly to read vars from them
+	var/obj/machinery/door/airlock/airlock = new airlock_type // we need to create a new instance of the airlock and assembly to read vars from them
 	var/obj/structure/door_assembly/assembly = new airlock.assemblytype
 
 	if(airlock_material == "glass" && assembly.noglass) // prevents painting glass airlocks with a paint job that doesn't have a glass version, such as the freezer
@@ -1158,8 +1158,9 @@
 //Airlock is passable if it is open (!density), bot has access, and is not bolted shut or powered off)
 	return !density || (check_access(ID) && !locked && hasPower())
 
-/obj/machinery/door/airlock/emag_act(mob/user)
+/obj/machinery/door/airlock/emag_act(mob/user, obj/item/card/emag/doorjack/D)
 	if(!operating && density && hasPower() && !(obj_flags & EMAGGED))
+		D.use_charge(user)
 		operating = TRUE
 		update_icon(AIRLOCK_EMAG, 1)
 		sleep(6)
@@ -1246,6 +1247,8 @@
 		add_hiddenprint(user)
 
 /obj/machinery/door/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = 1, attack_dir)
+	if((damage_amount >= obj_integrity) && (damage_flag == "bomb"))
+		flags_1 |= NODECONSTRUCT_1  //If an explosive took us out, don't drop the assembly
 	. = ..()
 	if(obj_integrity < (0.75 * max_integrity))
 		update_icon()
@@ -1322,7 +1325,7 @@
 													datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
 	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
-		ui = new(user, src, ui_key, "ai_airlock", name, 500, 390, master_ui, state)
+		ui = new(user, src, ui_key, "AiAirlock", name, 500, 390, master_ui, state)
 		ui.open()
 	return TRUE
 
